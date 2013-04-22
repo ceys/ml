@@ -4,6 +4,8 @@
 #include <fstream>
 #include <sstream>
 #include <cmath>
+#include <algorithm>
+
 using namespace std;
 
 
@@ -17,10 +19,7 @@ struct output {
     string type;
 };
 
-struct typeDistance {
-    string type;
-    float distance;
-};
+typedef pari<string, float> TypeDistance;
 
 
 //为了效率，使用该函数前需要把特征id号转换为整数,并按升序排序
@@ -62,50 +61,31 @@ void readTrain(vector<sample>& train, const string& file) {
 }
 
 
-//ToDo:可以考虑在这个函数加入对特征排序的选项
-vector<int> split_to_int(string& str, const string& pattern) {
-    string::size_type pos;
-    str += pattern;
-    int size = str.size();
-    vector<int> result;
-
-    for (int i=0; i<size; ++i) {
-        pos = str.find(pattern);
-        if (pos < size) {
-             result.push_back((int)str.substr(i, pos-1));
-             i = pos + pattern.size() -1;
-        }
-    }
-    return result;
-}
-
-
 bool comp(typeDistance& t1, typeDistance& t2) {
     return t1.distance < t2.distance ? true : false;
 }
 
-string classify(const vector<sample>& train, vector<int>& test, string& id) {
+string classify(const vector<sample>& train, vector<int>& test, string& tid) {
     float distance;
-    typeDistance td;
-    td.id = "";
-    td.distance = 0.0;
-    vector<typeDistance> topN(td, 11);
+    TypeDistance td("",0.0);
+    vector<TypeDistance> topN(11, td);
     make_heap(topN.begin(), topN.end(), comp);
     for (vector<sample>::iterator iter = train.begin(); iter != train.end(); ++iter) {
-        distance = jaccard_distance(*iter.features, &test);
+        distance = jaccard_distance(iter->features, test);
         if (topN.frout().distance < distance) {
             pop_heap(topN.begin(),topN.end());
             topN.pop_back();
-            typeDistance intd;
-            intd.id = *id;
-            intd.distance = distance;
+            TypeDistance intd(iter->type, distance);
             topN.push_back(intd);
             push_heap(topN.begin(),topN.end());
         }
     }
-    map<string, int> countmap;
-    for (vector<typeDistance>::iterater iter = topN.begin(); iter != topN.end(); ++iter) {
-        countMap
+    map<string, int> countMap;
+    for (vector<TypeDistance>::iterater iter = topN.begin(); iter != topN.end(); ++iter) {
+        ++countMap[iter->type];
+    }
+    return *max_element(countMap.begin(), countMap.end());
+}
 
 
 void knn_process(const vector<sample>& train, const string pattern) {
@@ -120,9 +100,11 @@ void knn_process(const vector<sample>& train, const string pattern) {
             test.push_back(d);
         }
         sort(test.begin(), test.end());
-        out.type = classify(train, &test)
-        
+        out.type = classify(train, &test);
+        cout << out.id << "\t" << out.type;
+        test.clear();
     }
+}
        
 
 int main() {
