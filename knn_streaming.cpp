@@ -1,4 +1,5 @@
 #include <iostream>
+#include <map>
 #include <string>
 #include <vector>
 #include <fstream>
@@ -19,7 +20,7 @@ struct output {
     string type;
 };
 
-typedef pari<string, float> TypeDistance;
+typedef pair<string, float> TypeDistance;
 
 
 //为了效率，使用该函数前需要把特征id号转换为整数,并按升序排序
@@ -54,25 +55,25 @@ void readTrain(vector<sample>& train, const string& file) {
         while (sin >> d) {
             ts.features.push_back(d);
         }
-        sort(ts.begin(), ts.end());
+        sort(ts.features.begin(), ts.features.end());
         train.push_back(ts);
     }
     fin.close();
 }
 
 
-bool comp(typeDistance& t1, typeDistance& t2) {
-    return t1.distance < t2.distance ? true : false;
+bool comp(const TypeDistance& t1, const TypeDistance& t2) {
+    return t1.second < t2.second ? true : false;
 }
 
-string classify(const vector<sample>& train, vector<int>& test, string& tid) {
+string classify(const vector<sample>& train, vector<int>& test) {
     float distance;
     TypeDistance td("",0.0);
     vector<TypeDistance> topN(11, td);
     make_heap(topN.begin(), topN.end(), comp);
     for (vector<sample>::iterator iter = train.begin(); iter != train.end(); ++iter) {
         distance = jaccard_distance(iter->features, test);
-        if (topN.frout().distance < distance) {
+        if (topN.front().second < distance) {
             pop_heap(topN.begin(),topN.end());
             topN.pop_back();
             TypeDistance intd(iter->type, distance);
@@ -88,7 +89,7 @@ string classify(const vector<sample>& train, vector<int>& test, string& tid) {
 }
 
 
-void knn_process(const vector<sample>& train, const string pattern) {
+void knn_process(vector<sample>& train) {
     string line;
     int d = 0;
     vector<int> test;
@@ -100,7 +101,7 @@ void knn_process(const vector<sample>& train, const string pattern) {
             test.push_back(d);
         }
         sort(test.begin(), test.end());
-        out.type = classify(train, &test);
+        out.type = classify(train, test);
         cout << out.id << "\t" << out.type;
         test.clear();
     }
@@ -108,16 +109,8 @@ void knn_process(const vector<sample>& train, const string pattern) {
        
 
 int main() {
-    int va1[] = {1,2,3,4,5,6};
-    int va2[] = {2,3,4,8,9};
-    vector<int> v1(va1,va1+6);
-    vector<int> v2(va2,va2+5); 
-    float x = jaccard_distance(v1,v2);
-    cout << x << endl;
-    
-    int test;
-    while (cin >> test) {
-        cout << test;
-    }
-    return 0;
+    const string inputfile = "";
+    vector<sample> train;
+    readTrain(train, inputfile);
+    knn_process(train);
 }
